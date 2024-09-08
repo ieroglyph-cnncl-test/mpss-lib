@@ -10,10 +10,10 @@ constexpr auto ErrorMsgBadResponse{ "Cannot reach the file" };
 } // namespace
 
 namespace mpss {
-string ContentDownloader::getContent(string_view url) const
+string ContentDownloader::getContent() const
 {
     try {
-        const auto r = cpr::Get(cpr::Url{ url });
+        const auto r = cpr::Get(cpr::Url{ _url });
         if (r.status_code != ::StatusCodeOk) {
             throw std::runtime_error(ErrorMsgBadResponse);
         }
@@ -22,4 +22,8 @@ string ContentDownloader::getContent(string_view url) const
         throw e;
     }
 };
+ContentDownloader::ContentDownloader(string url)
+    : _url{ url }
+{
+}
 } // namespace mpss
