@@ -20,7 +20,7 @@ TEST_CASE("Sanity test")
     REQUIRE(2 * 2 == 4);
 }
 
-TEST_CASE("Real content downloader downloads content")
+TEST_CASE("Real content downloader downloads content", "[requires-connection]")
 {
     const mpss::ContentDownloader cd{ ::RealJsonUrl };
     try {
@@ -31,15 +31,7 @@ TEST_CASE("Real content downloader downloads content")
     }
 }
 
-TEST_CASE("Real content downloader throws when failed to download")
-{
-    REQUIRE_THROWS([] {
-        const mpss::ContentDownloader cd{ ::UnrealJsonUrl };
-        const auto content = cd.getContent();
-    }());
-}
-
-TEST_CASE("Content downloader throws when failed to download")
+TEST_CASE("Real content downloader throws when failed to download", "[requires-connection]")
 {
     REQUIRE_THROWS([] {
         const mpss::ContentDownloader cd{ ::UnrealJsonUrl };
