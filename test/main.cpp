@@ -2,9 +2,9 @@
 #include <iostream>
 #include <memory>
 
-#include "CloudInfoFetcher.hpp"
-#include "ContentDownloader.hpp"
 #include "TestContentDownloader.hpp"
+#include "mpss/CloudInfoFetcher.hpp"
+#include "mpss/ContentDownloader.hpp"
 
 namespace {
 constexpr auto RealJsonUrl{

@@ -18,20 +18,20 @@ public:
 
     /// @brief Returns a list of all currently supported Ubuntu releases.
     /// @return A vector of string
-    [[nodiscard]] std::vector<std::string> getSupportedReleases() const override;
+    [[nodiscard]] std::vector<std::string> getSupportedReleases() override;
 
     /// @brief Returns the current Ubuntu LTS version.
     /// @return A string
-    [[nodiscard]] std::string getCurrentLtsRelease() const override;
+    [[nodiscard]] std::string getCurrentLtsRelease() override;
 
     /// @brief Return the sha256 of the disk1.img item of a given Ubuntu release.
     /// @return A string
-    [[nodiscard]] std::string getSha256(std::string_view releaseName) const override;
+    [[nodiscard]] std::string getSha256(std::string_view releaseName) override;
 
     virtual ~CloudInfoFetcher();
 
 private:
-    // A bit of pimp idiom to hold temp data, simplify compability on changes
+    // A bit of pimpl idiom to hold temp data, simplify compability on changes
     class CloudInfoFetcherImpl;
     std::unique_ptr<CloudInfoFetcherImpl> _content{};
 };
