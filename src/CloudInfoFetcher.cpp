@@ -21,50 +21,57 @@ struct ReleaseRecord
 class CloudInfoFetcher::CloudInfoFetcherImpl
 {
 public:
-    explicit CloudInfoFetcherImpl(std::unique_ptr<IContentDownloader> &&loader)
-        : loader(std::move(loader))
+    explicit CloudInfoFetcherImpl(std::shared_ptr<IContentDownloader> loader)
+        : loader(loader)
     {
     }
-    std::unique_ptr<IContentDownloader> loader;
+    void fetchInfo()
+    {
+        using namespace std::string_view_literals;
+
+        const auto stringData{ loader->getContent() };
+        json data = json::parse(stringData);
+
+        const auto products = data.find("products"sv);
+        if (products == data.end())
+            throw std::runtime_error("JSON schema error: object 'Products' not found");
+
+        for (const auto &product : *products) {
+            const auto isSupported{ product.at("supported"sv).template get<bool>() == true };
+            const auto isArch{ product.at("arch"sv).template get<string>() == "amd64"sv };
+            if (!isSupported || !isArch) continue;
+
+            const auto curVersion = product.at("versions"sv).back(); // {}-init creates a json_array
+            const auto pubname{ curVersion.at("pubname"sv).template get<string>() };
+            const auto sha256{
+                curVersion.at("items"sv).at("disk1.img"sv).at("sha256"sv).template get<string>()
+            };
+            supportedReleases.insert({ pubname, { sha256 } });
+
+            const auto aliases{ product.at("aliases"sv).template get<string>() };
+            const auto isCurrentLts{ aliases.find("lts"sv) != string::npos };
+            if (isCurrentLts) {
+                currentLtsRelease = pubname;
+            }
+        }
+    }
+    std::shared_ptr<IContentDownloader> loader;
     map<string, ReleaseRecord> supportedReleases{};
     string currentLtsRelease{};
     bool isFetched{ false };
     ~CloudInfoFetcherImpl() = default;
 };
 
-CloudInfoFetcher::CloudInfoFetcher(std::unique_ptr<IContentDownloader> &&loader)
-    : _content{ std::make_unique<CloudInfoFetcherImpl>(std::move(loader)) }
+CloudInfoFetcher::CloudInfoFetcher(std::shared_ptr<IContentDownloader> loader)
+    : _content{ std::make_unique<CloudInfoFetcherImpl>(loader) }
 {
 }
 
 void CloudInfoFetcher::fetchInfo()
 {
     _content->supportedReleases.clear();
-    using namespace std::string_view_literals;
     try {
-        const auto stringData{ _content->loader->getContent() };
-        json data = json::parse(stringData);
-        const auto products = data.find("products"sv);
-        if (products == data.end())
-            throw std::runtime_error("JSON schema error: object 'Products' not found");
-        for (const auto &product : *products) {
-            const auto isSupported{ product.at("supported"sv).template get<bool>() == true };
-            const auto isArch{ product.at("arch"sv).template get<string>() == "amd64"sv };
-            if (!isSupported || !isArch) continue;
-
-            const auto curVersion = product.at("versions"sv).back();
-            const auto pubname{ curVersion.at("pubname"sv).template get<string>() };
-            const auto sha256{
-                curVersion.at("items"sv).at("disk1.img"sv).at("sha256"sv).template get<string>()
-            };
-            _content->supportedReleases.insert({ pubname, { sha256 } });
-
-            const auto aliases{ product.at("aliases"sv).template get<string>() };
-            const auto isCurrentLts{ aliases.find("lts"sv) != string::npos };
-            if (isCurrentLts) {
-                _content->currentLtsRelease = pubname;
-            }
-        }
+        _content->fetchInfo();
         _content->isFetched = true;
     } catch (const std::runtime_error &err) {
         throw err;
@@ -90,12 +97,12 @@ std::string CloudInfoFetcher::getCurrentLtsRelease()
     return _content->currentLtsRelease;
 }
 
-std::string CloudInfoFetcher::getSha256(std::string_view releaseName)
+std::optional<std::string> CloudInfoFetcher::getSha256(std::string_view releaseName)
 {
     if (!_content->isFetched) fetchInfo();
     const auto ret = _content->supportedReleases.find(string(releaseName));
     if (ret == _content->supportedReleases.end()) {
-        throw std::runtime_error("No records with release name");
+        return {};
     }
     return ret->second.sha256;
 }

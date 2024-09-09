@@ -12,18 +12,27 @@ constexpr auto DefaultDataUrl{
 using std::string;
 using std::string_view;
 
+/// @brief Defines interface for downloading the data
+/// Can be used to perform dependency injection to CloudInfoFetcher.
+/// Can be replaced by mock implementations for testing purposes
 class IContentDownloader
 {
 public:
+    /// @brief Implements retreiving the data on releases
+    /// @return std::string containing the data
     [[nodiscard]] virtual string getContent() const = 0;
 
     virtual ~IContentDownloader() = default;
 };
 
+/// @brief The basic implementation of non-caching content downloader
 class ContentDownloader : public IContentDownloader
 {
 public:
-    ContentDownloader(string url = DefaultDataUrl);
+    /// @brief Constructs the downloaded object
+    /// @param url
+    explicit ContentDownloader(string url = DefaultDataUrl);
+
     [[nodiscard]] string getContent() const override;
 
     virtual ~ContentDownloader();

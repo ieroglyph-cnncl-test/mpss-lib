@@ -13,6 +13,19 @@ constexpr auto RealJsonUrl{
 constexpr auto UnrealJsonUrl{ "https://best.jsons.out.there/top1.json" };
 constexpr auto ExpectedCurrentLtsRelease{ "ubuntu-noble-24.04-amd64-server-20240821" };
 constexpr auto ExpectedSha256{ "0e25ca6ee9f08ec5d4f9910054b66ae7163c6152e81a3e67689d89bd6e4dfa69" };
+
+template<typename DownloaderT>
+auto makeFetcher()
+{
+    std::shared_ptr<mpss::IContentDownloader> cd = std::make_shared<DownloaderT>();
+    std::unique_ptr<mpss::ICloudInfoFetcher> fetcher =
+            std::make_unique<mpss::CloudInfoFetcher>(std::move(cd));
+    return fetcher;
+};
+
+auto makeDemoFetcher = makeFetcher<mpss::DemoDataContentDownloader>;
+auto makeThrowingFetcher = makeFetcher<mpss::AlwaysThrowingContentDownloader>;
+
 } // namespace
 
 TEST_CASE("Sanity test")
@@ -60,10 +73,7 @@ TEST_CASE("Real content downloader throws when failed to download", "[requires-c
 TEST_CASE("With error during fetching info the exception is thrown")
 {
     REQUIRE_THROWS([] {
-        std::unique_ptr<mpss::IContentDownloader> cd =
-                std::make_unique<mpss::AlwaysThrowingContentDownloader>();
-        std::unique_ptr<mpss::ICloudInfoFetcher> fetcher =
-                std::make_unique<mpss::CloudInfoFetcher>(std::move(cd));
+        auto fetcher = makeThrowingFetcher();
         fetcher->fetchInfo();
     }());
 }
@@ -71,20 +81,14 @@ TEST_CASE("With error during fetching info the exception is thrown")
 TEST_CASE("With normal content loader no exceptions happen")
 {
     REQUIRE_NOTHROW([] {
-        std::unique_ptr<mpss::IContentDownloader> cd =
-                std::make_unique<mpss::DemoDataContentDownloader>();
-        std::unique_ptr<mpss::ICloudInfoFetcher> fetcher =
-                std::make_unique<mpss::CloudInfoFetcher>(std::move(cd));
+        auto fetcher = makeDemoFetcher();
         fetcher->fetchInfo();
     }());
 }
 
 TEST_CASE("Testing on demo data")
 {
-    std::unique_ptr<mpss::IContentDownloader> cd =
-            std::make_unique<mpss::DemoDataContentDownloader>();
-    std::unique_ptr<mpss::ICloudInfoFetcher> fetcher =
-            std::make_unique<mpss::CloudInfoFetcher>(std::move(cd));
+    auto fetcher = makeDemoFetcher();
     fetcher->fetchInfo();
 
     SECTION("Testing current lts release")
@@ -104,33 +108,35 @@ TEST_CASE("Testing on demo data")
     SECTION("Testing existing sha256")
     {
         const auto sha256{ fetcher->getSha256(ExpectedCurrentLtsRelease) };
-        REQUIRE(sha256 == ExpectedSha256);
+        REQUIRE(sha256.has_value());
+        REQUIRE(sha256.value() == ExpectedSha256);
     }
 
     SECTION("Testing non existing sha256")
     {
-        REQUIRE_THROWS_AS(
-                [&fetcher] {
-                    const auto sha256{ fetcher->getSha256("Some random string") };
-                }(),
-                std::runtime_error);
+        const auto sha256{ fetcher->getSha256("Some random string") };
+        REQUIRE(!sha256.has_value());
     }
 }
 
 TEST_CASE("Manual call to fetchInfo is not important")
 {
-    const auto makeFetcher = [] {
-        std::unique_ptr<mpss::IContentDownloader> cd =
-                std::make_unique<mpss::DemoDataContentDownloader>();
-        std::unique_ptr<mpss::ICloudInfoFetcher> fetcher =
-                std::make_unique<mpss::CloudInfoFetcher>(std::move(cd));
-        return fetcher;
-    };
-    auto fetcher1 = makeFetcher();
-    auto fetcher2 = makeFetcher();
+    auto fetcher1 = makeDemoFetcher();
+    auto fetcher2 = makeDemoFetcher();
     fetcher1->fetchInfo();
 
     REQUIRE_NOTHROW([&] {
         REQUIRE(fetcher1->getCurrentLtsRelease() == fetcher2->getCurrentLtsRelease());
     }());
+}
+
+TEST_CASE("There is no need for writing verbose types")
+{
+    using std::make_shared;
+    using std::make_unique;
+    auto loader = make_shared<mpss::DemoDataContentDownloader>();
+    auto fetcher = make_unique<mpss::CloudInfoFetcher>(loader);
+
+    const auto currentLtsRelease{ fetcher->getCurrentLtsRelease() };
+    REQUIRE(currentLtsRelease == ExpectedCurrentLtsRelease);
 }
