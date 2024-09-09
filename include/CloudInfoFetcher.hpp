@@ -7,6 +7,7 @@
 #include <memory>
 
 namespace mpss {
+
 class CloudInfoFetcher : public ICloudInfoFetcher
 {
 public:
@@ -27,10 +28,11 @@ public:
     /// @return A string
     [[nodiscard]] std::string getSha256(std::string_view releaseName) const override;
 
-    ~CloudInfoFetcher() {};
+    virtual ~CloudInfoFetcher();
 
 private:
-    std::unique_ptr<IContentDownloader> _loader;
-    std::string _content{};
+    // A bit of pimp idiom to hold temp data, simplify compability on changes
+    class CloudInfoFetcherImpl;
+    std::unique_ptr<CloudInfoFetcherImpl> _content{};
 };
 } // namespace mpss

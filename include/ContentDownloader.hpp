@@ -13,7 +13,7 @@ class IContentDownloader
 public:
     [[nodiscard]] virtual string getContent() const = 0;
 
-    virtual ~IContentDownloader() {};
+    virtual ~IContentDownloader() = default;
 };
 
 class ContentDownloader : public IContentDownloader
@@ -21,6 +21,8 @@ class ContentDownloader : public IContentDownloader
 public:
     ContentDownloader(string url);
     [[nodiscard]] string getContent() const override;
+
+    virtual ~ContentDownloader();
 
 private:
     string _url;

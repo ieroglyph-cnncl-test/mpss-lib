@@ -21,7 +21,10 @@ string ContentDownloader::getContent() const
     } catch (const std::exception &e) {
         throw e;
     }
-};
+}
+
+ContentDownloader::~ContentDownloader() {};
+
 ContentDownloader::ContentDownloader(string url)
     : _url{ url }
 {

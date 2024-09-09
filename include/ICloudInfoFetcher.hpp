@@ -23,6 +23,6 @@ public:
     /// @return An optional with a string
     [[nodiscard]] virtual std::string getSha256(std::string_view releaseName) const = 0;
 
-    virtual ~ICloudInfoFetcher() {};
+    virtual ~ICloudInfoFetcher() = default;
 };
 } // namespace mpss
