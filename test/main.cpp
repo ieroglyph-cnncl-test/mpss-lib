@@ -2,9 +2,9 @@
 #include <iostream>
 #include <memory>
 
-#include "CloudInfoFetcher.hpp"
-#include "ContentDownloader.hpp"
 #include "TestContentDownloader.hpp"
+#include "mpss/CloudInfoFetcher.hpp"
+#include "mpss/ContentDownloader.hpp"
 
 namespace {
 constexpr auto RealJsonUrl{
@@ -97,4 +97,22 @@ TEST_CASE("Testing on demo data")
                 }(),
                 std::runtime_error);
     }
+}
+
+TEST_CASE("Manual call to fetchInfo is not important")
+{
+    const auto makeFetcher = [] {
+        std::unique_ptr<mpss::IContentDownloader> cd =
+                std::make_unique<mpss::DemoDataContentDownloader>();
+        std::unique_ptr<mpss::ICloudInfoFetcher> fetcher =
+                std::make_unique<mpss::CloudInfoFetcher>(std::move(cd));
+        return fetcher;
+    };
+    auto fetcher1 = makeFetcher();
+    auto fetcher2 = makeFetcher();
+    fetcher1->fetchInfo();
+
+    REQUIRE_NOTHROW([&] {
+        REQUIRE(fetcher1->getCurrentLtsRelease() == fetcher2->getCurrentLtsRelease());
+    }());
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ContentDownloader.hpp"
+#include "mpss/ContentDownloader.hpp"
 
 #include <exception>
 #include <string>

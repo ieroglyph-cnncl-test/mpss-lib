@@ -1,4 +1,4 @@
-#include "CloudInfoFetcher.hpp"
+#include "mpss/CloudInfoFetcher.hpp"
 
 #include <algorithm>
 #include <fmt/format.h>
@@ -11,15 +11,6 @@ using std::map;
 using std::string;
 using std::vector;
 using json = nlohmann::json;
-
-namespace {
-constexpr auto ContentLocation{
-    "https://cloud-images.ubuntu.com/releases/streams/v1/com.ubuntu.cloud:released:download.json"
-};
-constexpr auto ContentIndexLocation{
-    "https://cloud-images.ubuntu.com/releases/streams/v1/index.json"
-};
-} // namespace
 
 // Struct to store the data we would actually need to perform the requests
 struct ReleaseRecord
@@ -37,6 +28,7 @@ public:
     std::unique_ptr<IContentDownloader> loader;
     map<string, ReleaseRecord> supportedReleases{};
     string currentLtsRelease{};
+    bool isFetched{ false };
     ~CloudInfoFetcherImpl() = default;
 };
 
@@ -60,9 +52,7 @@ void CloudInfoFetcher::fetchInfo()
             const auto isArch{ product.at("arch"sv).template get<string>() == "amd64"sv };
             if (!isSupported || !isArch) continue;
 
-            const auto curVersion =
-                    product.at("versions"sv)
-                            .back(); // can't use {} initialization, it creates an array of 1 elem
+            const auto curVersion = product.at("versions"sv).back();
             const auto pubname{ curVersion.at("pubname"sv).template get<string>() };
             const auto sha256{
                 curVersion.at("items"sv).at("disk1.img"sv).at("sha256"sv).template get<string>()
@@ -75,6 +65,7 @@ void CloudInfoFetcher::fetchInfo()
                 _content->currentLtsRelease = pubname;
             }
         }
+        _content->isFetched = true;
     } catch (const std::runtime_error &err) {
         throw err;
     } catch (const json::exception &e) {
@@ -82,8 +73,9 @@ void CloudInfoFetcher::fetchInfo()
     }
 }
 
-std::vector<std::string> CloudInfoFetcher::getSupportedReleases() const
+std::vector<std::string> CloudInfoFetcher::getSupportedReleases()
 {
+    if (!_content->isFetched) fetchInfo();
     vector<string> ret;
     ret.reserve(_content->supportedReleases.size());
     for (const auto &[key, _] : _content->supportedReleases) {
@@ -92,16 +84,18 @@ std::vector<std::string> CloudInfoFetcher::getSupportedReleases() const
     return ret;
 }
 
-std::string CloudInfoFetcher::getCurrentLtsRelease() const
+std::string CloudInfoFetcher::getCurrentLtsRelease()
 {
+    if (!_content->isFetched) fetchInfo();
     return _content->currentLtsRelease;
 }
 
-std::string CloudInfoFetcher::getSha256(std::string_view releaseName) const
+std::string CloudInfoFetcher::getSha256(std::string_view releaseName)
 {
+    if (!_content->isFetched) fetchInfo();
     const auto ret = _content->supportedReleases.find(string(releaseName));
     if (ret == _content->supportedReleases.end()) {
-        throw std::runtime_error(fmt::format("No records for release {}", releaseName));
+        throw std::runtime_error("No records with release name");
     }
     return ret->second.sha256;
 }
