@@ -22,12 +22,30 @@ TEST_CASE("Sanity test")
 
 TEST_CASE("Real content downloader downloads content", "[requires-connection]")
 {
-    const mpss::ContentDownloader cd{ ::RealJsonUrl };
-    try {
-        const auto content = cd.getContent();
-        REQUIRE(!content.empty());
-    } catch (const std::runtime_error &err) {
-        std::cout << err.what();
+    SECTION("With directly specified url")
+    {
+        REQUIRE_NOTHROW([] {
+            const mpss::ContentDownloader cd{ ::RealJsonUrl };
+            try {
+                const auto content = cd.getContent();
+                REQUIRE(!content.empty());
+            } catch (const std::runtime_error &err) {
+                std::cout << err.what();
+            }
+        }());
+    }
+
+    SECTION("Without directly specified url")
+    {
+        REQUIRE_NOTHROW([] {
+            const mpss::ContentDownloader cd{};
+            try {
+                const auto content = cd.getContent();
+                REQUIRE(!content.empty());
+            } catch (const std::runtime_error &err) {
+                std::cout << err.what();
+            }
+        }());
     }
 }
 
