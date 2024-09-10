@@ -1,6 +1,5 @@
 #heavily inspired by https://github.com/microsoft/vcpkg/blob/master/scripts/toolchains/windows.cmake
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
-    add_definitions(-DFMT_HEADER_ONLY)
     add_definitions(-DMPSS_EXPORT_LIB)
     set(MPSS_CRT_LINKAGE "dynamic")
     if(MPSS_CRT_LINKAGE STREQUAL "dynamic")
@@ -35,6 +34,7 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror -Wpedantic")
 endif()
 
+add_definitions(-DFMT_HEADER_ONLY)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug/bin")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release/bin")
 
