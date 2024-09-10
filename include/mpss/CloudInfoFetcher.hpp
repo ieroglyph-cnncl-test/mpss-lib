@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../mpssexport.hpp"
 #include "ICloudInfoFetcher.hpp"
 
 #include "ContentDownloader.hpp"
@@ -8,7 +9,7 @@
 
 namespace mpss {
 
-class CloudInfoFetcher : public ICloudInfoFetcher
+class MPSS_EXPORT CloudInfoFetcher : public ICloudInfoFetcher
 {
 public:
     CloudInfoFetcher(std::unique_ptr<IContentDownloader> &&loader);

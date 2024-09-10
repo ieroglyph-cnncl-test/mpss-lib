@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../mpssexport.hpp"
+
 #include <string>
 #include <string_view>
 
@@ -12,7 +14,7 @@ constexpr auto DefaultDataUrl{
 using std::string;
 using std::string_view;
 
-class IContentDownloader
+class MPSS_EXPORT IContentDownloader
 {
 public:
     [[nodiscard]] virtual string getContent() const = 0;
@@ -20,7 +22,7 @@ public:
     virtual ~IContentDownloader() = default;
 };
 
-class ContentDownloader : public IContentDownloader
+class MPSS_EXPORT ContentDownloader : public IContentDownloader
 {
 public:
     ContentDownloader(string url = DefaultDataUrl);

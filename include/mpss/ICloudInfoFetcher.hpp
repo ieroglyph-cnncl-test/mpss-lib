@@ -1,11 +1,13 @@
 #pragma once
 
+#include "../mpssexport.hpp"
+
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace mpss {
-class ICloudInfoFetcher
+class MPSS_EXPORT ICloudInfoFetcher
 {
 public:
     /// @brief Fetches the content of the file from the API
